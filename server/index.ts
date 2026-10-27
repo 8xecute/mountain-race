@@ -9,6 +9,7 @@ const app=express();app.use(express.static('dist'));const http=createServer(app)
 type Room={code:string;host:string;players:Player[];tokens:Record<string,string>;track:Track;phase:'lobby'|'race'|'finished';round:number;animationStart:number;animationEnd:number;leader?:string;commands:Record<string,Command>;riskTargets:RiskTargets;timer?:NodeJS.Timeout;startedAt?:number;finishedAt?:number;lastTick?:number;lastBotThink?:number;result?:string};
 const rooms=new Map<string,Room>();const activeSockets=new Map<string,string>();const colors=['#ef6b4a','#57a9d7','#f2c452','#8fc76a','#c58bd8','#f58eaf','#59c5b3','#f4a35e'];
 function publish(r:Room){io.to(r.code).emit('snapshot',{...r,tokens:undefined,commands:undefined,riskTargets:undefined,timer:undefined,serverNow:Date.now()});}
+function publishRaceUpdate(r:Room){const {track,tokens,commands,riskTargets,timer,...state}=r;io.to(r.code).emit('race-update',{...state,serverNow:Date.now()});}
 function newTrack(){for(let attempt=0;attempt<5;attempt++){const t=makeTrack(randomBytes(4).readUInt32BE());if(validateTrack(t))return t;}return makeTrack(1);}
 function finish(r:Room,finishers:Player[],alive:Player[]){if(r.timer)clearInterval(r.timer);if(finishers.length){finishers.sort((a,b)=>(a.finishTime??1)-(b.finishTime??1));const best=finishers[0].finishTime;r.result=`ผู้ชนะ: ${finishers.filter(p=>p.finishTime===best).map(p=>p.name).join(' & ')}`;}else r.result=alive.length?`ผู้ชนะ: ${alive[0].name}`:'ไม่มีผู้ชนะ';r.finishedAt=Date.now();r.phase='finished';publish(r);}
 function tick(r:Room){if(r.phase!=='race')return;const now=Date.now(),dt=Math.max(0,Math.min(200,now-(r.lastTick??now)));r.lastTick=now;
@@ -16,7 +17,7 @@ function tick(r:Room){if(r.phase!=='race')return;const now=Date.now(),dt=Math.ma
  const result=stepRealtime(r.players,r.track,r.commands,r.riskTargets,dt);r.players=result.players;for(const id of result.consumedRisks){delete r.riskTargets[id];const driver=r.players.find(p=>p.id===id);if(driver)delete driver.riskCurve;if(r.commands[id])r.commands[id]={...r.commands[id],riskConfirmed:false};}
  for(const p of r.players){const key=r.riskTargets[p.id];if(key!==undefined){const c=r.track.curves.find(x=>x.start===key);if(!c||p.position>c.end||p.status!=='racing'){delete r.riskTargets[p.id];delete p.riskCurve;}}}
  r.animationStart=now;r.animationEnd=now+CONFIG.tickMs;const active=r.players.filter(p=>!p.spectator),finishers=active.filter(p=>p.status==='finished'),alive=active.filter(p=>p.status==='racing');r.leader=alive.slice().sort((a,b)=>b.position-a.position||a.id.localeCompare(b.id))[0]?.id;
- if(finishers.length||alive.length<=1)finish(r,finishers,alive);else publish(r);
+ if(finishers.length||alive.length<=1)finish(r,finishers,alive);else publishRaceUpdate(r);
 }
 function startRace(r:Room){const racers=r.players.filter(p=>!p.spectator);racers.forEach((p,i)=>{p.position=(racers.length-i-1)*CONFIG.gap;p.previous=p.position;p.lane=0;p.previousLane=0;p.lateral=0;p.previousLateral=0;});const now=Date.now();r.phase='race';r.round=1;r.startedAt=now;r.lastTick=now;r.lastBotThink=0;r.animationStart=now;r.animationEnd=now+CONFIG.tickMs;r.commands={};r.riskTargets={};r.leader=racers[0]?.id;r.timer=setInterval(()=>tick(r),CONFIG.tickMs);publish(r);}
 io.on('connection',socket=>{
