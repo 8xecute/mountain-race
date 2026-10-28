@@ -1,27 +1,39 @@
 import {generateTrack,validateRoad} from './track';
 const SPEED_BASIS_MS=3000;
-export const CONFIG = { length:2000, speedBasisMs:SPEED_BASIS_MS, tickMs:100, laneChangeMs:1500, botThinkMs:700, initialSpeed:24, maxSpeedKmh:100, maxSpeed:100*SPEED_BASIS_MS/3600, acceleration:12, braking:18, handling:6, gap:10, sight:200, clearGap:45, clearBonus:6, passBonus:36, dangerousExcess:21, moderateExcess:15, minorSlowdown:9, majorSlowdown:15, cliffSlowdown:18 } as const;
+export const CONFIG = { length:7000, speedBasisMs:SPEED_BASIS_MS, tickMs:100, gameSpeed:1, laneChangeMs:1500, botThinkMs:700, initialSpeed:24, minCruiseKmh:20, maxSpeedKmh:180, maxSpeed:180*SPEED_BASIS_MS/3600, acceleration:12, braking:18, handling:6, gap:40, sight:700, clearGap:45, clearBonus:6, passBonus:36, dangerousExcess:21, moderateExcess:15, minorSlowdown:9, majorSlowdown:15, cliffSlowdown:18 } as const;
 export type Action = 'brake'|'hold'|'accelerate';
-export type Command = { action:Action; overtake:boolean; riskConfirmed:boolean; lane?:0|1 };
-export type Curve = {start:number; end:number; safe:number; danger:'low'|'cliff'; dashed:boolean; kind?:'wide'|'tight'; long?:boolean};
-export type Player = {id:string; name:string; color:string; car:string; ready:boolean; connected:boolean; spectator:boolean; position:number; previous:number; speed:number; status:'racing'|'finished'|'dead'; finishTime?:number; passed?:boolean; passFrontId?:string; lane?:0|1; previousLane?:0|1; lateral?:number; previousLateral?:number; riskCurve?:number; bot?:boolean; lastEvent?:string};
-export type Track = {seed:number; curves:Curve[]; dashed:{start:number;end:number}[]; route?:[number,number,number][]};
+export const CAR_STATS:Record<string,{accel:number;brake:number;max:number}>={hatch:{accel:1,brake:1,max:1},sport:{accel:.9,brake:.9,max:1},pickup:{accel:1.15,brake:1,max:.92},coupe:{accel:1.05,brake:1.1,max:.96}};
+export type Command = { action:Action; overtake:boolean; riskConfirmed:boolean; lane?:0|1|2 };
+export type Curve = {start:number; end:number; safe:number; danger:'low'|'cliff'; dashed:boolean; kind?:'wide'|'tight'; long?:boolean;insideLane?:0|2};
+export type Player = {id:string; name:string; color:string; car:string; ready:boolean; connected:boolean; spectator:boolean; position:number; previous:number; speed:number; status:'racing'|'finished'|'dead'; finishTime?:number;finishAt?:number;grip?:number;groundSpeedKmh?:number;raceStats?:{passes:number;cleanCorners:number;mistakes:number;lostDistance:number;worstCorner?:number}; passed?:boolean; passFrontId?:string; lane?:0|1|2; previousLane?:0|1|2; lateral?:number; previousLateral?:number; riskCurve?:number; bot?:boolean;botLevel?:'easy'|'medium'|'hard'; lastEvent?:string};
+export type Track = {length?:number;pace?:number;mode?:'short'|'long';overtakeZones?:{start:number;end:number;kind:'approach'|'exit'}[];seed:number; curves:Curve[]; dashed:{start:number;end:number}[]; route?:[number,number,number][]};
 export const DEFAULT_COMMAND:Command = {action:'hold',overtake:false,riskConfirmed:false};
-export function makeTrack(seed:number):Track {return generateTrack(seed,CONFIG.length);}
-export function validateTrack(t:Track) {return t.curves.length>0&&t.curves.every((c,i)=>c.start>=0&&c.start<c.end&&c.end<=CONFIG.length&&c.safe>0&&(!i||t.curves[i-1].end<c.start))&&t.dashed.every(d=>d.end-d.start>=20)&&t.dashed[0]?.start===0&&t.dashed.at(-1)?.end===CONFIG.length&&(!t.route||validateRoad(t.route));}
+export function makeTrack(seed:number,length:number=CONFIG.length):Track {return generateTrack(seed,length);}
+export function validateTrack(t:Track) {return t.curves.length>0&&t.curves.every((c,i)=>c.start>=0&&c.start<c.end&&c.end<=(t.length??CONFIG.length)&&c.safe>0&&(!i||t.curves[i-1].end<c.start))&&t.dashed.every(d=>d.end-d.start>=20)&&t.dashed[0]?.start===0&&t.dashed.at(-1)?.end===(t.length??CONFIG.length)&&(!t.route||validateRoad(t.route));}
 export function nextCurve(track:Track,pos:number) {return track.curves.find(c=>c.end>=pos);}
 export function speedFor(p:Player,c:Command){return Math.max(0,Math.min(CONFIG.maxSpeed,p.speed+(c.action==='accelerate'?CONFIG.acceleration:c.action==='brake'?-CONFIG.braking:0)));}
+export function cornerRules(curve:Curve,p:Player){
+ if(curve.insideLane===undefined)return {safe:curve.safe+CONFIG.handling,distanceFactor:1,line:'ปกติ'};
+ const lane=p.lateral??p.lane??1,relative=curve.insideLane===0?lane-1:1-lane;
+ return {safe:curve.safe+CONFIG.handling+relative*5,distanceFactor:1-relative*.055,line:relative<-.4?'ด้านใน':relative>.4?'ด้านนอก':'กลาง'};
+}
+/** Conservative braking guide, accounting for 100 ms server steps and reaction time. */
+export function brakingGuide(track:Track,p:Player){
+ const curve=nextCurve(track,p.position);
+ if(!curve)return {state:'clear' as const,distance:0,brakingDistance:0};
+ const distance=Math.max(0,curve.start-p.position),safe=cornerRules(curve,p).safe;
+ const speed=p.speed/CONFIG.speedBasisMs*1000, safeSpeed=safe/CONFIG.speedBasisMs*1000;
+ const deceleration=CONFIG.braking*(CAR_STATS[p.car]??CAR_STATS.hatch).brake/CONFIG.speedBasisMs*1000/(CONFIG.speedBasisMs/1000);
+ const brakingDistance=Math.max(0,(speed*speed-safeSpeed*safeSpeed)/(2*deceleration))+speed*.6;
+ const state=p.speed<=safe?'safe' as const:distance<=brakingDistance?'brake' as const:distance<=brakingDistance+speed*2?'prepare' as const:'clear' as const;
+ return {state,distance,brakingDistance};
+}
 export function recommendAction(track:Track,p:Player): {action:Action;reason:string} {
  const curve=nextCurve(track,p.position);
  if(!curve)return {action:p.speed<CONFIG.maxSpeed?'accelerate':'hold',reason:'ทางข้างหน้าโล่ง'};
- const safe=curve.safe+CONFIG.handling, distance=Math.max(0,curve.start-p.position);
- const accelerated=Math.min(CONFIG.maxSpeed,p.speed+CONFIG.acceleration);
- let v=accelerated, brakingDistance=0;
- while(v>safe){v=Math.max(0,v-CONFIG.braking);brakingDistance+=v;}
- if(distance<=accelerated+brakingDistance+CONFIG.clearBonus){
-   if(p.speed>safe)return {action:'brake',reason:'เตรียมความเร็วให้พอดีก่อนเข้าโค้ง'};
-   if(accelerated>safe)return {action:'hold',reason:'ใกล้โค้งแล้ว รักษาความเร็วปลอดภัย'};
- }
+ const safe=cornerRules(curve,p).safe,guide=brakingGuide(track,p),inside=p.position>=curve.start;
+ if(guide.state==='brake')return {action:'brake',reason:'ลดความเร็วก่อนเข้าโค้ง'};
+ if((inside||guide.state==='prepare')&&p.speed+CONFIG.acceleration*.25>safe)return {action:'hold',reason:'รักษาการเกาะในโค้ง เตรียมเร่งเมื่อพ้นโค้ง'};
  return {action:p.speed<CONFIG.maxSpeed?'accelerate':'hold',reason:'ยังมีระยะให้เร่ง'};
 }
 export function riskFor(track:Track,p:Player,c:Command){ const speed=speedFor(p,c); const curve=track.curves.find(x=>p.position<=x.end && p.position+speed+CONFIG.clearBonus>=x.start); return curve && curve.danger==='cliff' && speed>curve.safe+CONFIG.handling+CONFIG.dangerousExcess ? 0.25:0; }

@@ -17,3 +17,9 @@ test('real-time acceleration never exceeds the 100 km/h limit',()=>{let cars=[p(
 
 test('a car at 100 km/h can brake for a bend 200 metres ahead',()=>{const t:Track={seed:1,curves:[{start:CONFIG.sight,end:CONFIG.sight+40,safe:36,danger:'cliff',dashed:false}],dashed:[]};let car=p('a',0,CONFIG.maxSpeed);for(let i=0;i<90;i++){car=stepRealtime([car],t,{a:c('brake')},{},100).players[0];assert.ok(car.position<t.curves[0].start)}assert.ok(car.speed<=36+CONFIG.handling)});
 
+
+test('slope affects speed without inventing gravity on a flat track',()=>{const up:Track={seed:9,curves:[],dashed:[],route:[[0,0,0],[100,10,0],[200,20,0]]};const down:Track={...up,route:[[0,20,0],[100,10,0],[200,0,0]]};const car=p('a',100,40);const run=(t:Track)=>stepRealtime([car],t,{a:c('hold')},{},100).players[0].speed;assert.ok(run(up)<40);assert.ok(run(down)>40);assert.equal(run(track),40)});
+
+test('cruise floor is 20 km/h on empty road but traffic and brakes take priority',()=>{const min=CONFIG.minCruiseKmh*CONFIG.speedBasisMs/3600;const cruise=stepRealtime([p('a',0,0)],track,{a:c('hold')},{},100).players[0];assert.ok(cruise.speed>=min);const brake=stepRealtime([p('a',0,1)],track,{a:c('brake')},{},100).players[0];assert.ok(brake.speed<min);const queue=stepRealtime([p('a',10,0),p('b',0,40)],track,{a:c('brake'),b:c('accelerate')},{},100).players;assert.ok(queue[0].position-queue[1].position>=CONFIG.gap-1e-8);assert.ok(queue[1].speed<min)});
+
+test('middle lane settles exactly without oscillation after floating point drift',()=>{let car=p('a',0,24);for(let i=0;i<100;i++){car=stepRealtime([car],track,{a:c('hold',1)},{},100).players[0];if(i>5)assert.equal(car.lateral,1)}car={...car,lateral:1.0000000000000002};car=stepRealtime([car],track,{a:c('hold',1)},{},100).players[0];assert.equal(car.lateral,1)});
