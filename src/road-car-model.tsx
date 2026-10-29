@@ -1,3 +1,4 @@
+import {ackermannAngle} from '../shared/front-steering';
 import {Canvas,useFrame} from '@react-three/fiber';
 import {OrbitControls} from '@react-three/drei';
 import React,{useMemo,useRef} from 'react';import * as THREE from 'three';import {roadCar} from '../shared/cars';import {CAR_APPEARANCE} from './car-appearance';
@@ -8,7 +9,7 @@ function shell(stations:Station[],bottom:number){const vertices:number[]=[],indi
 export function RoadCarModel({car,color,ghost=false,steering,distance}:{car:string;color:string;ghost?:boolean;steering?:React.RefObject<number>;distance?:React.RefObject<number>}){
  const c=roadCar(car),a=CAR_APPEARANCE[car]??CAR_APPEARANCE.hatch,L=c.length*1.45,pickup=c.shape==='pickup',tall=pickup||c.shape==='suv',hatch=c.shape==='hatch'||c.shape==='suv',radius=a.wheel,axle=L*.32,base=.23,roof=a.roof;
  const wheels=useRef<THREE.Group[]>([]),spins=useRef<THREE.Group[]>([]);
- useFrame((_,dt)=>{wheels.current.forEach((wheel,i)=>{if(wheel)wheel.rotation.y=THREE.MathUtils.damp(wheel.rotation.y,i%2===1?(steering?.current??0):0,12,dt)});spins.current.forEach(w=>{if(w)w.rotation.x=(distance?.current??0)/radius})});
+ useFrame((_,dt)=>{wheels.current.forEach((wheel,i)=>{if(wheel)wheel.rotation.y=THREE.MathUtils.damp(wheel.rotation.y,i%2===1?ackermannAngle(steering?.current??0,axle*2,i<2?-1:1):0,12,dt)});spins.current.forEach(w=>{if(w)w.rotation.x=(distance?.current??0)/radius})});
  const body=useMemo(()=>shell([[-L*.5,.49,.17],[-L*.43,.58,.26],[-L*.28,.59,.28],[L*.22,.58,.27],[L*.42,.55,.21],[L*.5,.48,.13]],-.19),[L]);
  const cabin=useMemo(()=>{const back=pickup?-L*.12:hatch?-L*.4:-L*.32,front=L*(pickup?.29:.27);const v=[-.51,base,back,.51,base,back,-.5,base,front,.5,base,front,-.43,roof,L*a.rearRoof,.43,roof,L*a.rearRoof,-.42,roof,L*a.frontRoof,.42,roof,L*a.frontRoof];const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex([0,1,4,1,5,4,2,6,3,3,6,7,0,4,2,2,4,6,1,3,5,3,7,5,4,5,6,5,7,6]);g.computeVertexNormals();return g;},[L,a,base,roof,hatch,pickup]);
  React.useEffect(()=>()=>{body.dispose();cabin.dispose()},[body,cabin]);

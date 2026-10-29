@@ -7,12 +7,12 @@ export function botCommands(players:Player[],track:Track,memory:BotMemory={},now
  const racing=players.filter(p=>p.status==='racing'&&!p.spectator&&!(p.recoveryMs??0));const commands:Record<string,Command>={};
  for(const p of racing){if(!p.bot)continue;const style=BOT_DRIVING[p.botLevel??'medium'];const lateral=p.lateral??p.lane??1;let action=recommendAction(track,p).action;if((p.botLevel==='hard'||(!track.curves.some(c=>c.end>=p.position&&c.start<=p.position+100)))&&action==='hold')action='accelerate';const cap=CONFIG.maxSpeed*(CAR_STATS[p.car]?.max??1)*style.pace*(1+(p.chaseBonus??0));if(action==='accelerate'&&p.speed>=cap)action='hold';const state=memory[p.id]??(memory[p.id]={since:now,cooldown:0,target:lateral});const front=racing.filter(q=>q.id!==p.id&&Math.abs((q.lateral??q.lane??1)-lateral)<CONFIG.bodyCorridor&&q.position>p.position).sort((a,b)=>a.position-b.position)[0];
 
- const clear=(target:number)=>{
+ const clear=(target:number,escape=false)=>{
   const low=Math.min(lateral,target)-CONFIG.bodyCorridor,high=Math.max(lateral,target)+CONFIG.bodyCorridor;
   if(traffic.some(c=>c.lateral>=low&&c.lateral<=high&&c.position>p.position-5&&c.position-p.position<Math.max(60,(p.speed+c.speed)/3*style.prediction+20)))return false;
-  return racing.every(q=>{if(q.id===p.id)return true;const ql=q.lateral??q.lane??1,qlFuture=ql+(q.lateralVelocity??0)*style.prediction;const crossing=Math.max(ql,qlFuture)>=low&&Math.min(ql,qlFuture)<=high;if(!crossing)return true;const gap=q.position-p.position,closing=(q.speed-p.speed)/3,prediction=Math.abs(ql-target)<CONFIG.bodyCorridor||Math.abs(qlFuture-target)<CONFIG.bodyCorridor?style.prediction:Math.min(style.prediction,(CONFIG.bodyCorridor+Math.abs(ql-lateral))*CONFIG.laneChangeMs/1000),future=gap+closing*prediction;return Math.abs(gap)>CONFIG.trafficGap+style.margin&&Math.abs(future)>CONFIG.trafficGap+style.margin&&gap*future>0;});
+  return racing.every(q=>{if(q.id===p.id)return true;if(escape&&q.id===(p.rearContactId??front?.id)&&q.position-p.position>=CONFIG.trafficGap-1e-8&&Math.abs(target-(q.lateral??q.lane??1))>CONFIG.bodyCorridor&&Math.abs(target-(q.lateral??q.lane??1))>Math.abs(lateral-(q.lateral??q.lane??1)))return true;const ql=q.lateral??q.lane??1,qlFuture=ql+(q.lateralVelocity??0)*style.prediction;const crossing=Math.max(ql,qlFuture)>=low&&Math.min(ql,qlFuture)<=high;if(!crossing)return true;const gap=q.position-p.position,closing=(q.speed-p.speed)/3,prediction=Math.abs(ql-target)<CONFIG.bodyCorridor||Math.abs(qlFuture-target)<CONFIG.bodyCorridor?style.prediction:Math.min(style.prediction,(CONFIG.bodyCorridor+Math.abs(ql-lateral))*CONFIG.laneChangeMs/1000),future=gap+closing*prediction;return Math.abs(gap)>CONFIG.trafficGap+style.margin&&Math.abs(future)>CONFIG.trafficGap+style.margin&&gap*future>0;});
  };
- if(state.target!==undefined&&!clear(state.target))state.target=lateral;
+ if(state.target!==undefined&&!clear(state.target,!!front&&front.position-p.position<CONFIG.trafficGap+8))state.target=lateral;
  if(state.frontId!==front?.id){state.frontId=front?.id;state.noticedAt=now;}
  const approaching=front&&front.position-p.position<Math.max(style.lookAhead,p.speed*.8)&&(front.speed<p.speed+5||front.position-p.position<18);
  if(approaching&&now>=state.cooldown&&now-(state.noticedAt??now)>=(p.botLevel?style.reactionMs:0)){
@@ -25,8 +25,10 @@ export function botCommands(players:Player[],track:Track,memory:BotMemory={},now
 
  const wall=[0,1,2].every(l=>racing.some(q=>Math.abs((q.lateral??q.lane??1)-l)<.35&&Math.abs(q.position-p.position)<CONFIG.gap*.7));if(!wall)state.since=now;const designated=racing.filter(q=>q.bot&&Math.abs(q.position-p.position)<CONFIG.gap*.7).sort((a,b)=>(b.lateral??b.lane??1)-(a.lateral??a.lane??1)||a.id.localeCompare(b.id))[0];if(wall&&designated?.id===p.id&&now-state.since>=2500&&!track.curves.some(c=>c.end>=p.position&&c.start<=p.position+p.speed*2)){action='brake';state.target=lateral;}
  if(traffic.some(c=>c.position>p.position&&c.position-p.position<Math.max(120,(p.speed+c.speed)*2)&&Math.abs(c.lateral-lateral)<CONFIG.bodyCorridor)){if(clear(.1))state.target=.1;else action='brake';}
+ if(p.rearContactId||(front&&front.position-p.position<CONFIG.trafficGap+8)){const escape=[.05,.35,.65,1,1.35,1.65,1.95].filter(x=>Math.abs(x-lateral)>.3&&clear(x,true)).sort((a,b)=>Math.abs(a-lateral)-Math.abs(b-lateral))[0];if(escape!==undefined){state.target=escape;state.cooldown=now+style.cooldownMs;action=front&&front.position-p.position<CONFIG.trafficGap+5?'brake':'accelerate';}else action='brake';}
  const target=state.target??lateral,steering=Math.abs(target-lateral)<.065?0:target>lateral?1:-1;
  commands[p.id]={action,steering,overtake:false,riskConfirmed:false};
  }return commands;
 }
+
 
