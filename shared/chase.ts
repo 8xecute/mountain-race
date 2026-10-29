@@ -1,5 +1,5 @@
 import {CONFIG,type Player,type Track} from './game';
-export const CHASE={perRank:.05,max:.20,fadeStart:40,fullGap:100,draftMin:10,draftMax:40,draftAccel:.15,carryMs:2000,transitionMs:2000} as const;
+export const CHASE={perRank:.10,max:.40,fadeStart:40,fullGap:100,draftMin:10,draftMax:40,draftAccel:.15,carryMs:2000,transitionMs:2000} as const;
 export function chaseAssist(p:Player,players:Player[],track:Track,dt:number,accelerating:boolean){
  const ordered=players.filter(q=>!q.spectator&&(q.status==='racing'||q.status==='finished')).sort((a,b)=>b.position-a.position||a.id.localeCompare(b.id));
  const rank=ordered.findIndex(q=>q.id===p.id),front=ordered.slice(0,Math.max(0,rank)).reverse().find(q=>q.position>p.position),gap=front?front.position-p.position:0;
