@@ -1,11 +1,11 @@
 import type {TrafficCar} from './traffic';
 import {CONFIG,CAR_STATS,recommendAction,type Command,type Player,type Track} from './game';
 export type BotMemory=Record<string,{since:number;cooldown:number;target?:number;frontId?:string;noticedAt?:number}>;
-export const BOT_DRIVING={easy:{reactionMs:900,cooldownMs:2600,lookAhead:45,prediction:1,margin:4,pace:.8},medium:{reactionMs:200,cooldownMs:1100,lookAhead:85,prediction:1.6,margin:2.5,pace:1},hard:{reactionMs:0,cooldownMs:600,lookAhead:140,prediction:2.4,margin:1.5,pace:1}} as const;
+export const BOT_DRIVING={easy:{reactionMs:500,cooldownMs:1800,lookAhead:65,prediction:1,margin:4,pace:.92},medium:{reactionMs:120,cooldownMs:850,lookAhead:85,prediction:1.6,margin:2.5,pace:1},hard:{reactionMs:0,cooldownMs:400,lookAhead:140,prediction:2.4,margin:1.5,pace:1}} as const;
 /** Continuous passing paths, evaluated against occupied bodies and relative closing speeds. */
 export function botCommands(players:Player[],track:Track,memory:BotMemory={},now=Date.now(),traffic:TrafficCar[]=[]):Record<string,Command>{
  const racing=players.filter(p=>p.status==='racing'&&!p.spectator&&!(p.recoveryMs??0));const commands:Record<string,Command>={};
- for(const p of racing){if(!p.bot)continue;const style=BOT_DRIVING[p.botLevel??'medium'];const lateral=p.lateral??p.lane??1;let action=recommendAction(track,p).action;if((p.botLevel==='hard'||(p.botLevel==='medium'&&!track.curves.some(c=>c.end>=p.position&&c.start<=p.position+100)))&&action==='hold')action='accelerate';const cap=CONFIG.maxSpeed*(CAR_STATS[p.car]?.max??1)*style.pace*(1+(p.chaseBonus??0));if(action==='accelerate'&&p.speed>=cap)action='hold';const state=memory[p.id]??(memory[p.id]={since:now,cooldown:0,target:lateral});const front=racing.filter(q=>q.id!==p.id&&Math.abs((q.lateral??q.lane??1)-lateral)<CONFIG.bodyCorridor&&q.position>p.position).sort((a,b)=>a.position-b.position)[0];
+ for(const p of racing){if(!p.bot)continue;const style=BOT_DRIVING[p.botLevel??'medium'];const lateral=p.lateral??p.lane??1;let action=recommendAction(track,p).action;if((p.botLevel==='hard'||(!track.curves.some(c=>c.end>=p.position&&c.start<=p.position+100)))&&action==='hold')action='accelerate';const cap=CONFIG.maxSpeed*(CAR_STATS[p.car]?.max??1)*style.pace*(1+(p.chaseBonus??0));if(action==='accelerate'&&p.speed>=cap)action='hold';const state=memory[p.id]??(memory[p.id]={since:now,cooldown:0,target:lateral});const front=racing.filter(q=>q.id!==p.id&&Math.abs((q.lateral??q.lane??1)-lateral)<CONFIG.bodyCorridor&&q.position>p.position).sort((a,b)=>a.position-b.position)[0];
 
  const clear=(target:number)=>{
   const low=Math.min(lateral,target)-CONFIG.bodyCorridor,high=Math.max(lateral,target)+CONFIG.bodyCorridor;
@@ -29,3 +29,4 @@ export function botCommands(players:Player[],track:Track,memory:BotMemory={},now
  commands[p.id]={action,steering,overtake:false,riskConfirmed:false};
  }return commands;
 }
+
