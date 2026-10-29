@@ -10,7 +10,8 @@
     "build": "tsc --noEmit && vite build",
     "test": "tsx --test shared/*.test.ts",
     "start": "tsx server/index.ts",
-    "test:legacy": "tsx --test shared/legacy/*.test.ts"
+    "test:legacy": "tsx --test shared/legacy/*.test.ts",
+    "test:online": "node scripts/spectator-integration.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
