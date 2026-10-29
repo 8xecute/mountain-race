@@ -8,9 +8,9 @@ test('a fast car hits roadside posts on either side without tunnelling, but the 
  assert.equal(hitRoadsidePost(3,4,2.6,2.6,1000,125),undefined);
  assert.ok(hitRoadsidePost(16,16,2,2.6,1000,125));
 });
-test('post contact stops the car, holds the impact point for one second, then respawns safely at zero',()=>{
- let car=stepRealtime([p],track,{p:command},{},100).players[0];assert.equal(car.recoveryKind,'post');assert.equal(car.recoveryMs,ROADSIDE.blinkMs);assert.equal(car.speed,0);const at=car.position;
- for(let i=0;i<9;i++){car=stepRealtime([car],track,{p:command},{},100).players[0];assert.ok(car.recoveryMs!>0);assert.equal(car.position,at);assert.equal(car.speed,0);}
+test('post contact stops the car, holds the impact point for the rank-adjusted recovery, then respawns safely at zero',()=>{
+ let car=stepRealtime([p],track,{p:command},{},100).players[0];assert.equal(car.recoveryKind,'post');assert.equal(car.recoveryMs,ROADSIDE.blinkMs+2000);assert.equal(car.speed,0);const at=car.position;
+ for(let i=0;i<29;i++){car=stepRealtime([car],track,{p:command},{},100).players[0];assert.ok(car.recoveryMs!>0);assert.equal(car.position,at);assert.equal(car.speed,0);}
  car=stepRealtime([car],track,{p:command},{},100).players[0];assert.equal(car.recoveryMs,0);assert.equal(car.speed,0);assert.equal(car.position,at);assert.ok(car.lateral!>=0&&car.lateral!<=2);assert.equal(car.respawnLaunch,true);
 });
 test('respawn waits when every safe road position is occupied',()=>{
