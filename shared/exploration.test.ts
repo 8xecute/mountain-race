@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {advanceRevealedDistance} from './exploration';import type {Player} from './game';
+const p=(id:string,position:number):Player=>({id,name:id,position,previous:position,speed:40,car:'hatch',color:'red',status:'racing',spectator:false,connected:true,ready:true});
+test('only the leader opens 100m and followers do not add their own sight distance',()=>{assert.equal(advanceRevealedDistance(0,[p('a',100),p('b',50)],1000),200)});
+test('shared exploration persists on position changes or leader withdrawal and caps at finish',()=>{assert.equal(advanceRevealedDistance(500,[p('b',100)],1000),500);assert.equal(advanceRevealedDistance(500,[p('b',450),p('a',350)],1000),550);assert.equal(advanceRevealedDistance(900,[p('b',950)],1000),1000);assert.equal(advanceRevealedDistance(500,[{...p('spectator',999),spectator:true}],1000),500)});

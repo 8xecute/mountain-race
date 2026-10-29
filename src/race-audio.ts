@@ -1,9 +1,9 @@
 import {useEffect,useRef,useState} from 'react';
-export function useRaceAudio(speed:number,racing:boolean,event:string,rank:number){
- const audio=useRef<{context:AudioContext;osc:OscillatorNode;gain:GainNode}|null>(null);const [enabled,setEnabled]=useState(false);const previous=useRef({event:'',rank:0});
- const toggle=()=>{if(!audio.current){const context=new AudioContext(),osc=context.createOscillator(),gain=context.createGain();osc.type='sawtooth';gain.gain.value=0;osc.connect(gain).connect(context.destination);osc.start();audio.current={context,osc,gain}}const next=!enabled;audio.current.context.resume();setEnabled(next)};
- useEffect(()=>{const a=audio.current;if(!a)return;const now=a.context.currentTime;a.osc.frequency.setTargetAtTime(45+speed*1.8,now,.12);a.gain.gain.setTargetAtTime(enabled&&racing?.025:0,now,.1);
+export function useRaceAudio(speed:number,racing:boolean,event:string,rank:number,grip=1){
+ const audio=useRef<{context:AudioContext;osc:OscillatorNode;gain:GainNode}|null>(null);const [enabled,setEnabled]=useState(false);const squeal=useRef<{osc:OscillatorNode;gain:GainNode}|null>(null);const previous=useRef({event:'',rank:0});
+ const toggle=()=>{if(!audio.current){const context=new AudioContext(),osc=context.createOscillator(),gain=context.createGain();osc.type='sawtooth';gain.gain.value=0;osc.connect(gain).connect(context.destination);osc.start();const skid=context.createOscillator(),volume=context.createGain();skid.type='triangle';skid.frequency.value=650;volume.gain.value=0;skid.connect(volume).connect(context.destination);skid.start();squeal.current={osc:skid,gain:volume};audio.current={context,osc,gain}}const next=!enabled;audio.current.context.resume();setEnabled(next)};
+ useEffect(()=>{const a=audio.current;if(!a)return;const now=a.context.currentTime;if(squeal.current){squeal.current.gain.gain.setTargetAtTime(enabled&&racing&&grip<.9?(1-grip)*.06:0,now,.08);squeal.current.osc.frequency.setTargetAtTime(550+(1-grip)*600,now,.1);}a.osc.frequency.setTargetAtTime(45+speed*1.8,now,.12);a.gain.gain.setTargetAtTime(enabled&&racing?.025:0,now,.1);
  if(enabled&&racing&&((event&&event!==previous.current.event)||(previous.current.rank>rank&&rank>0))){const tone=a.context.createOscillator(),gain=a.context.createGain();tone.frequency.value=previous.current.rank>rank?700:event.includes('เร็วเกิน')?160:440;gain.gain.setValueAtTime(.035,now);gain.gain.exponentialRampToValueAtTime(.001,now+.16);tone.connect(gain).connect(a.context.destination);tone.start();tone.stop(now+.17);tone.onended=()=>{tone.disconnect();gain.disconnect()};}previous.current={event,rank};
- },[speed,racing,event,rank,enabled]);
+ },[speed,racing,event,rank,enabled,grip]);
  useEffect(()=>()=>{audio.current?.context.close()},[]);return {enabled,toggle};
 }

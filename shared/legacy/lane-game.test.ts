@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {CONFIG,type Command,type Player,type Track} from './game';
-import {resolveLanes} from './lane-game';
-import {motionAt} from './motion';
+import {CONFIG,type Command,type Player,type Track} from '../game';
+import {resolveLanes} from '../lane-game';
+import {motionAt} from '../motion';
 const player=(id:string,position:number,speed=12,lane:0|1=0):Player=>({id,name:id,color:'#fff',car:'hatch',ready:true,connected:true,spectator:false,position,previous:position,speed,status:'racing',lane,previousLane:lane});
 const track:Track={seed:1,curves:[],dashed:[]};
 const cmd=(lane?:0|1,action:'hold'|'accelerate'|'brake'='hold'):Command=>({action,lane,overtake:false,riskConfirmed:false});

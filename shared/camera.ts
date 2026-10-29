@@ -5,3 +5,5 @@ export function boundedVerticalFov(aspect:number, maxHorizontal=90, preferredVer
  const verticalLimit=2*Math.atan(Math.tan(horizontal/2)/safeAspect)*180/Math.PI;
  return Math.min(preferredVertical,verticalLimit);
 }
+/** Fit a bounding sphere with padding even on narrow portrait viewports. */
+export function overviewDistance(radius:number,verticalFov:number,aspect:number){const halfV=verticalFov*Math.PI/360,halfH=Math.atan(Math.tan(halfV)*Math.max(.1,aspect));return Math.max(30,radius/Math.sin(Math.min(halfV,halfH)))*1.2;}

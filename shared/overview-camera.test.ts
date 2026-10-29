@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {overviewDistance} from './camera';
+test('overview fitting keeps the full route sphere inside portrait and landscape frustums',()=>{for(const aspect of [.45,1,2.3])for(const radius of [100,20000]){const fov=43,dist=overviewDistance(radius,fov,aspect);const v=fov*Math.PI/360,h=Math.atan(Math.tan(v)*aspect);assert.ok(dist*Math.sin(Math.min(v,h))>=radius*1.19)}});
