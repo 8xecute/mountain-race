@@ -5,7 +5,7 @@ export function useDrivingKeys(enabled:boolean,command:Command,send:(c:Command)=
  const current=useRef({command,send});current.current={command,send};
  useEffect(()=>{if(!enabled)return;const held=new Set<string>();
  const apply=(c:Command)=>{current.current.command=c;current.current.send(c)};
- const speed=()=>{const c=current.current.command;apply({...c,action:keyboardAction(held),lane:undefined,steering:(held.has('KeyD')?1:0)-(held.has('KeyA')?1:0) as -1|0|1,riskConfirmed:false})};
+ const speed=()=>{const c=current.current.command;apply({...c,action:keyboardAction(held),power:1,lane:undefined,steering:(held.has('KeyD')?1:0)-(held.has('KeyA')?1:0) as -1|0|1,riskConfirmed:false})};
  const editing=(e:KeyboardEvent)=>e.target instanceof Element&&!!e.target.closest('input,textarea,select,[contenteditable="true"]');
  const down=(e:KeyboardEvent)=>{if(!['KeyW','KeyA','KeyS','KeyD'].includes(e.code)||editing(e)||e.ctrlKey||e.metaKey||e.altKey)return;e.preventDefault();if(e.repeat||held.has(e.code))return;held.add(e.code);speed()};
  const up=(e:KeyboardEvent)=>{if(!held.delete(e.code))return;e.preventDefault();speed()};

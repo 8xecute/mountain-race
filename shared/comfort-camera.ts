@@ -1,0 +1,3 @@
+export function comfortAngle(current:number,target:number,dt:number,rate=1.2){const delta=Math.atan2(Math.sin(target-current),Math.cos(target-current)),step=Math.min(.05,Math.max(0,dt))*rate;return current+Math.max(-step,Math.min(step,delta*(1-Math.exp(-5*Math.max(0,Math.min(.05,dt))))));}
+export function comfortPitch(current:number,target:number,dt:number){const limited=Math.max(-.10,Math.min(.10,target));return current+(limited-current)*(1-Math.exp(-4*Math.max(0,Math.min(.05,dt))));}
+export function fixedDrivingFov(aspect:number,horizontal:number){const h=Math.max(70,Math.min(110,Number.isFinite(horizontal)?horizontal:90));return Math.min(aspect<1?75:85,2*Math.atan(Math.tan(h*Math.PI/360)/Math.max(.1,aspect))*180/Math.PI);}
