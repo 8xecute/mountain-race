@@ -103,3 +103,44 @@
 .race:has(.map-full) .watch-target,.race:has(.map-full) .standings-toggle{display:none}
 
 .start-countdown{position:absolute;inset:0;z-index:40;background:#14252d77;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;pointer-events:none}.start-countdown b{font-size:120px;color:#ffd471}.start-countdown span{font-size:22px}.finish-banner{background:#182a32;color:#fff;padding:8px 20px;font-size:22px;white-space:nowrap}.public-rooms{margin:16px 0;max-height:190px;overflow:auto}.public-rooms h3{font-size:14px}.public-rooms button{display:block;text-align:left;width:100%;background:#edf3ee;color:#244433;padding:10px;border-radius:6px;margin:5px 0;font-size:11px}
+
+/* Large, thumb-friendly analogue controls with clear neutral positions. */
+.mobile-race .analogue-controls{align-items:flex-end;gap:16px;bottom:calc(24px + env(safe-area-inset-bottom))}
+.mobile-race .analogue-controls label{background:#10232eee;border:1px solid #b5ced65e;border-radius:22px;padding:14px 12px;gap:8px}
+.mobile-race .analogue-controls .steer-slider{width:min(300px,49vw);min-height:116px;justify-content:center}
+.mobile-race .analogue-controls .pedal-slider{width:100px;min-height:200px}
+.mobile-race .analogue-controls span{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.mobile-race .analogue-controls b{font-size:12px}
+.mobile-race .analogue-controls .steer-slider small{display:block;font-size:10px}
+.mobile-race .analogue-controls input{-webkit-appearance:none;appearance:none;outline:none;background:transparent;border:0;min-height:60px}
+.mobile-race .steer-slider input{width:100%;height:60px}
+.mobile-race .analogue-controls .pedal-slider input{width:64px;height:130px;min-height:130px}
+.mobile-race .analogue-controls input::-webkit-slider-runnable-track{background:linear-gradient(90deg,#7894a4 49%,#f4f7f8 49%,#f4f7f8 51%,#7894a4 51%);border-radius:20px;height:10px}
+.mobile-race .analogue-controls input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:42px;height:42px;border-radius:50%;background:#f3c06a;border:4px solid #fff0d2;margin-top:-16px;box-shadow:0 2px 5px #0005}
+.mobile-race .pedal-slider input::-webkit-slider-runnable-track{width:10px;height:100%;background:linear-gradient(0deg,#cb8a75 49%,#fff 49%,#fff 51%,#79bfa0 51%)}
+.mobile-race .pedal-slider input::-webkit-slider-thumb{margin-top:0;margin-left:-16px}
+.mobile-race .analogue-controls input::-moz-range-track{background:#7894a4;border-radius:20px;height:10px;width:100%}
+.mobile-race .analogue-controls input::-moz-range-thumb{width:34px;height:34px;background:#f3c06a;border:4px solid #fff0d2;border-radius:50%}
+.mobile-race .drive,.mobile-race.driver-view .drive{bottom:calc(260px + env(safe-area-inset-bottom))}
+.mobile-race .grip-hud{bottom:calc(330px + env(safe-area-inset-bottom))}
+@media(max-height:500px) and (orientation:landscape){.mobile-race .analogue-controls .pedal-slider{min-height:160px;padding:8px}.mobile-race .analogue-controls .pedal-slider input{height:100px;min-height:100px}.mobile-race .drive,.mobile-race.driver-view .drive{bottom:calc(210px + env(safe-area-inset-bottom))}.mobile-race .grip-hud{bottom:calc(276px + env(safe-area-inset-bottom))}}
+
+/* Separate driving buttons; pointer capture keeps steering continuous between them. */
+.mobile-race .button-controls{align-items:flex-end;bottom:calc(28px + env(safe-area-inset-bottom));gap:12px}
+.button-controls .touch-steering-pad{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:7px;touch-action:none}
+.touch-steering-buttons,.touch-pedal-buttons{display:flex;gap:8px;pointer-events:auto;touch-action:none}
+.mobile-race .button-controls button{width:76px;min-width:0;height:86px;min-height:0;flex-shrink:0;border-radius:20px;border:1px solid #c4d8e65c;background:#152c3be8;color:#f2f6fa;box-shadow:none;transition:background .08s,border-color .08s;touch-action:none;-webkit-tap-highlight-color:transparent}
+.mobile-race .button-controls button b{font-size:26px}.mobile-race .button-controls button span{font-size:12px}
+.mobile-race .button-controls button.pressed{background:#487c9c;border-color:#c0e5ff;transform:none}
+.mobile-race .button-controls .touch-accelerate{background:#245845e8;border-color:#73b89c}.mobile-race .button-controls .touch-accelerate.pressed{background:#398467}
+.mobile-race .button-controls .touch-brake{background:#623b33e8;border-color:#bf887a}.mobile-race .button-controls .touch-brake.pressed{background:#9b5746}
+.touch-steering-pad small{font-size:9px;color:#e0eaf1;background:#142632bd;padding:3px 7px;border-radius:6px;white-space:nowrap}
+.mobile-race .drive,.mobile-race.driver-view .drive{bottom:calc(158px + env(safe-area-inset-bottom));width:auto;max-width:200px;min-width:90px;padding:5px 9px;display:flex;left:50%;right:auto;transform:translateX(-50%);border-radius:12px;background:#10232ee0}
+.mobile-race .drive .drive-middle{display:none}.mobile-race .drive .drive-top{display:flex}.mobile-race .drive .speed-metric{gap:4px;padding:0 0 3px;flex-wrap:nowrap}
+.mobile-race .drive .speed-metric strong{font-size:25px;line-height:1.15}.mobile-race .drive .speed-metric span{font-size:9px}.mobile-race .drive .speed-bar{height:2px}
+.mobile-race .grip-hud{bottom:calc(202px + env(safe-area-inset-bottom))}
+.mobile-race.details-open .drive{max-width:300px;display:flex;flex-wrap:wrap;justify-content:center}.mobile-race.details-open .drive .drive-middle{display:block;width:100%}
+@media(max-width:370px){.mobile-race .button-controls button{width:66px;height:78px}.touch-steering-buttons,.touch-pedal-buttons{gap:6px}}
+@media(orientation:landscape){.mobile-race .button-controls button{width:90px;height:82px}.mobile-race .drive,.mobile-race.driver-view .drive{bottom:calc(45px + env(safe-area-inset-bottom))}.mobile-race .grip-hud{bottom:calc(100px + env(safe-area-inset-bottom))}}
+.mobile-race .button-controls{bottom:calc(44px + env(safe-area-inset-bottom))}
+@media(orientation:portrait){.mobile-race .drive,.mobile-race.driver-view .drive{bottom:calc(174px + env(safe-area-inset-bottom))}.mobile-race .grip-hud{bottom:calc(218px + env(safe-area-inset-bottom))}}
