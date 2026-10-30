@@ -1,6 +1,6 @@
 import type {Player} from './game';
 import type {TrafficState} from './traffic';
-export function bufferedPlayer(previous:Player,next:Player):Player{return {...next,previous:previous.position,previousLateral:previous.lateral??previous.lane??0};}
+export function bufferedPlayer(previous:Player,next:Player):Player{return {...next,renderPrevious:{headingError:previous.headingError,frontWheelAngle:previous.frontWheelAngle,driftAmount:previous.driftAmount,driftSustainMs:previous.driftSustainMs,steeringInput:previous.steeringInput},previous:previous.position,previousLateral:previous.lateral??previous.lane??0};}
 
 type TimedState={serverNow:number;animationStart:number;animationEnd:number;players:Player[];traffic?:TrafficState};
 /** Pick the interpolation bracket on the render frame, not the React update timer. */

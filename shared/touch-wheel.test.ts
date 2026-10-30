@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {wheelDelta,wheelInput} from './touch-wheel';
+test('wheel rotation is symmetric, bounded, continuous at angle wrap and returns zero on release',()=>{assert.equal(wheelInput(0,60),.5);assert.equal(wheelInput(0,-60),-.5);assert.equal(wheelInput(.9,60),1);assert.equal(wheelInput(-.9,-60),-1);assert.ok(Math.abs(wheelDelta(179*Math.PI/180,-179*Math.PI/180)-2)<1e-9);assert.equal(wheelInput(.5,-60),0)});

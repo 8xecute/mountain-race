@@ -10,7 +10,7 @@ function shell(stations:Station[],bottom:number){const vertices:number[]=[],indi
 function CarBody({car,color,ghost=false,steering,distance}:{car:string;color:string;ghost?:boolean;steering?:React.RefObject<number>;distance?:React.RefObject<number>}){
  const c=roadCar(car),a=CAR_APPEARANCE[car]??CAR_APPEARANCE.hatch,L=c.length*1.45,pickup=c.shape==='pickup',tall=pickup||c.shape==='suv',hatch=c.shape==='hatch'||c.shape==='suv',radius=a.wheel,axle=L*.32,base=.23,roof=a.roof;
  const wheels=useRef<THREE.Group[]>([]),spins=useRef<THREE.Group[]>([]);
- useFrame((_,dt)=>{wheels.current.forEach((wheel,i)=>{if(wheel)wheel.rotation.y=THREE.MathUtils.damp(wheel.rotation.y,i%2===1?ackermannAngle(steering?.current??0,axle*2,i<2?-1:1):0,18,dt)});spins.current.forEach(w=>{if(w)w.rotation.x=(distance?.current??0)/radius})});
+ useFrame((_,dt)=>{wheels.current.forEach((wheel,i)=>{if(wheel)wheel.rotation.y=THREE.MathUtils.damp(wheel.rotation.y,i%2===1?ackermannAngle(steering?.current??0,axle*2,i<2?-1:1,1.2):0,18,dt)});spins.current.forEach(w=>{if(w)w.rotation.x=(distance?.current??0)/radius})});
  const body=useMemo(()=>shell([[-L*.5,.49,.17],[-L*.46,.54,.23],[-L*.38,.575,.27],[-L*.28,.59,.28],[L*.15,.585,.28],[L*.3,.57,.25],[L*.42,.53,.19],[L*.5,.48,.13]],-.19),[L]);
  const cabin=useMemo(()=>{const back=pickup?-L*.12:hatch?-L*.4:-L*.32,front=L*(pickup?.29:.27);const v=[-.51,base,back,.51,base,back,-.5,base,front,.5,base,front,-.43,roof,L*a.rearRoof,.43,roof,L*a.rearRoof,-.42,roof,L*a.frontRoof,.42,roof,L*a.frontRoof];const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex([0,1,4,1,5,4,2,6,3,3,6,7,0,4,2,2,4,6,1,3,5,3,7,5,4,5,6,5,7,6]);g.computeVertexNormals();return g;},[L,a,base,roof,hatch,pickup]);
  React.useEffect(()=>()=>{body.dispose();cabin.dispose()},[body,cabin]);
@@ -39,7 +39,7 @@ function CarBody({car,color,ghost=false,steering,distance}:{car:string;color:str
    {box([side*.365,.16,rear-.01],[.25,tall?.12:.075,.035],'#a51f28',[0,side*.12,0])}
    {box([side*.45,.085,rear-.016],[.045,tall?.19:.11,.025],'#ec3f40')}
    {box([side*.43,-.08,front+.014],[.1,.05,.025],'#abbac4')}
-   {[-1,1].map((end,index)=>{const i=(side===-1?0:2)+index;return <group key={end} position={[side*.535,-.16,end*axle]} ref={el=>{if(el)wheels.current[i]=el}}><group ref={el=>{if(el)spins.current[i]=el}}>
+   {[-1,1].map((end,index)=>{const i=(side===-1?0:2)+index;return <group key={end} position={[side*(end===1?.60:.56),-.16,end*axle]} ref={el=>{if(el)wheels.current[i]=el}}><group ref={el=>{if(el)spins.current[i]=el}}>
     <mesh rotation={[0,0,Math.PI/2]}><cylinderGeometry args={[radius,radius,.16,20]}/>{material('#151a20',0,.9)}</mesh>
     <mesh position={[side*.085,0,0]} rotation={[0,0,Math.PI/2]}><cylinderGeometry args={[radius*.72,radius*.72,.018,20]}/>{material('#3b444b',.8,.3)}</mesh>
     {[0,1,2,3,4].map(n=><group key={n} position={[side*.099,0,0]} rotation={[n*Math.PI*2/5,0,0]}>{box([0,radius*.3,0],[.018,radius*.65,.035],a.trim)}</group>)}

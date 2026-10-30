@@ -12,4 +12,4 @@ export function frontSteering(car:string,input:number,previous:number,speedKmh:n
  for(let i=0;i<steps;i++){const response=angle*target<0||Math.abs(target)<Math.abs(angle)?STEERING.counterResponseMs:STEERING.responseMs;const next=angle+(target-angle)*(1-Math.exp(-duration/steps/response));const average=(angle+next)/2;turn+=Math.max(0,distance)/steps/wheelbase*Math.tan(average);slip+=Math.atan(.5*Math.tan(average))/steps;angle=next;}
  return {angle,turn,slip};
 }
-export function ackermannAngle(angle:number,wheelbase:number,side:number){if(Math.abs(angle)<1e-6)return 0;const radius=wheelbase/Math.tan(angle);return Math.atan(wheelbase/(radius-side*.535));}
+export function ackermannAngle(angle:number,wheelbase:number,side:number,trackWidth=1.07){if(Math.abs(angle)<1e-6)return 0;const radius=wheelbase/Math.tan(angle);return Math.atan(wheelbase/(radius-side*trackWidth/2));}
