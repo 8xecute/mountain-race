@@ -1,0 +1,3 @@
+/** Progressive tyre scrub: excess speed is shed over time instead of snapping to a limit. */
+export const CORNERING={scrubDecelMinKmh:8,scrubDecelMaxKmh:24,scrubGrip:.88,severeRatio:1.35} as const;
+export function scrubSpeed(speed:number,safe:number,seconds:number){if(!Number.isFinite(safe)||speed<=safe||speed>safe*CORNERING.severeRatio)return speed;const excess=(speed-safe)/Math.max(1,safe),kmhPerSecond=CORNERING.scrubDecelMinKmh+(CORNERING.scrubDecelMaxKmh-CORNERING.scrubDecelMinKmh)*Math.min(1,excess/(CORNERING.severeRatio-1));return Math.max(safe,speed-kmhPerSecond/1.2*Math.max(0,seconds));}

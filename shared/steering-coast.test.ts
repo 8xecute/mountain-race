@@ -1,0 +1,14 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {CONFIG,DEFAULT_COMMAND,type Player,type Track} from './game';
+import {stepRealtime} from './realtime';
+const track:Track={seed:1,length:10000,curves:[],dashed:[],route:[[0,0,0],[0,0,5000],[0,0,10000]]};
+const base:Player={id:'p',name:'p',car:'hatch',color:'red',ready:true,connected:true,spectator:false,status:'racing',position:100,previous:100,speed:60/1.2,lateral:1};
+const run=(p:Player,action:'hold'|'brake'|'accelerate',steering=0)=>stepRealtime([p],track,{p:{...DEFAULT_COMMAND,action,steering}},{},100).players[0];
+test('coasting slows gently below 20 to a stop and never engages reverse',()=>{let p={...base};const first=run(p,'hold'),brake=run(p,'brake');assert.ok(first.speed<p.speed&&first.speed>brake.speed);for(let i=0;i<400;i++)p=run(p,'hold');assert.equal(p.speed,0);assert.ok(!p.reversing);assert.equal(run(p,'hold').speed,0);assert.ok(run(p,'accelerate').speed>0)});
+test('front steering is symmetric and independent of catch-up grip bonuses',()=>{const left=run(base,'hold',-.5),right=run(base,'hold',.5);assert.ok(left.lateral!<1&&right.lateral!>1);assert.ok(Math.abs(left.lateral!+right.lateral!-2)<1e-9);const boosted=run({...base,cornerBoost:1},'hold',.5);assert.equal(boosted.frontWheelAngle,right.frontWheelAngle);assert.equal(boosted.lateral,right.lateral)});
+test('blocked lateral motion cannot accumulate hidden heading into the next turn',()=>{const other={...base,id:'q',lateral:1+CONFIG.bodyCorridor+.001};let p={...base};for(let i=0;i<8;i++){p=stepRealtime([p,{...other,position:p.position,previous:p.position}],track,{p:{...DEFAULT_COMMAND,steering:1}},{},100).players[0];}assert.ok(Math.abs(p.headingError??0)<.01);assert.ok(p.lateral!<other.lateral!-CONFIG.bodyCorridor)});
+
+import {ROAD} from './road-dimensions';
+import {roadCar} from './cars';
+test('manual front steering can hold a constant-radius bend in both directions without an assist',()=>{for(const sign of [-1,1]){const radius=150,wheelbase=roadCar('hatch').length*1.45*.64;const road:Track={seed:sign,length:radius*2,curves:[],dashed:[],route:Array.from({length:81},(_,i)=>{const angle=i/80*2;return [sign*radius*(1-Math.cos(angle)),0,radius*Math.sin(angle)]})};const wheel=Math.atan(wheelbase/radius);let car:Player={...base,position:40,previous:40,frontWheelAngle:sign*wheel,headingError:-sign*Math.atan(.5*Math.tan(wheel))};for(let i=0;i<40;i++){const nextKmh=car.speed*1.2-CONFIG.coasting*.04;const limit=Math.min(.55,Math.atan(10*wheelbase/((nextKmh/3.6)**2+10)));const axis=Math.pow(wheel/limit,1/1.2)*.975+.025;car=stepRealtime([car],road,{p:{...DEFAULT_COMMAND,steering:-sign*axis}},{},100).players[0];assert.ok(!car.recoveryMs);assert.ok(Math.abs((car.lateral!-1)*ROAD.lateralMetres)<.5,`direction ${sign}, offset ${(car.lateral!-1)*ROAD.lateralMetres}`);}assert.ok(!car.cornerAssistActive);}});

@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {landmarksInRange} from './route-landmarks';
+test('landmarks use full-route kilometers and are filtered inclusively for custom segments',()=>{assert.equal(landmarksInRange('road1081',0,39.9).length,4);assert.deepEqual(landmarksInRange('road1081',12.5,20.2).map(p=>p.km),[12.5,20.2]);assert.equal(landmarksInRange('road1081',8,10).length,0);assert.equal(landmarksInRange('other',0,39.9).length,0);assert.equal((landmarksInRange('road1081',10,15)[0].km-10)*1000,2500)});

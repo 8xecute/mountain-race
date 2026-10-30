@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {scrubSpeed} from './cornering';
+test('safe driving keeps speed, while mild excess scrubs progressively rather than snapping',()=>{assert.equal(scrubSpeed(40,50,.1),40);const first=scrubSpeed(60,50,.1);assert.ok(first>50&&first<60);let speed=60;for(let i=0;i<40;i++)speed=scrubSpeed(speed,50,.1);assert.equal(speed,50)});
+test('scrub deceleration scales with elapsed time and never accelerates or undershoots',()=>{assert.ok(Math.abs((60-scrubSpeed(60,50,.2))-2*(60-scrubSpeed(60,50,.1)))<1e-9);assert.equal(scrubSpeed(50.01,50,1),50);assert.equal(scrubSpeed(60,50,0),60);assert.equal(scrubSpeed(100,50,.1),100);assert.equal(scrubSpeed(60,Infinity,.1),60)});
