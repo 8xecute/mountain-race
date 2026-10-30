@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {mapRotation,mapPanDelta} from './map-orientation';
+test('driver map points travel north/east/south/west upward',()=>{for(const [x,z] of [[0,-1],[1,0],[0,1],[-1,0]]){const r=mapRotation(x,z)*Math.PI/180;assert.ok(Math.abs(x*Math.cos(r)-z*Math.sin(r))<1e-9);assert.ok(x*Math.sin(r)+z*Math.cos(r)<-.99)}});
+test('dragging a rotated map follows screen axes and heading error is included',()=>{assert.deepEqual(mapPanDelta(10,5,0),{x:10,y:5});const d=mapPanDelta(10,0,-90);assert.ok(Math.abs(d.x)<1e-9);assert.equal(d.y,10);assert.ok(Math.abs(mapRotation(0,-1,.2)-.2*180/Math.PI)<1e-9)});

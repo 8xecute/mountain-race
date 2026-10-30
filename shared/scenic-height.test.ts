@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {altitudeAt} from './altitude';import {cliffDepth,cliffDrop} from './cliffs';
+test('altitude uses source elevations and selected map offset',()=>{const t={seed:1,mapId:'road1081',curves:[],dashed:[]};assert.equal(altitudeAt(t,0),305);assert.equal(altitudeAt({...t,startKm:7},100),altitudeAt(t,7100));assert.equal(altitudeAt({...t,mapId:'other'},0),null)});
+test('cliffs leave lowland, road and uphill side intact, with bounded depth',()=>{assert.equal(cliffDepth(50),0);assert.equal(cliffDrop(7,1,200),0);assert.equal(cliffDrop(30,-1,200),0);assert.ok(cliffDrop(15,1,200)>0);assert.equal(cliffDrop(30,1,1000),65)});

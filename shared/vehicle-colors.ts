@@ -1,0 +1,1 @@
+export const VEHICLE_COLORS=['#ef6b4a','#57a9d7','#f2c452','#8fc76a','#c58bd8','#f58eaf','#59c5b3','#f4a35e','#ffffff','#202630','#bfc7cf','#d42e38','#164c9c','#236447','#7b3fa1','#ffd52a','#9b613e','#50e4dc','#ef42b6','#434e66'];

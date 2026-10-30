@@ -1,0 +1,2 @@
+import {route,metadata} from './data/1081-full';import type {Track} from './game';
+export function altitudeAt(track:Track,position:number){if(track.mapId!=='road1081')return null;const d=Math.max(0,Math.min(39900,(track.startKm??0)*1000+position)),i=Math.min(route.length-1,Math.floor(d/20)),a=route[i],b=route[Math.min(i+1,route.length-1)];return metadata.start[2]-route[0][1]+a[1]+(b[1]-a[1])*(d/20-i);}

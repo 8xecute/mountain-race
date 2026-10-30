@@ -1,3 +1,4 @@
+import {MotorcycleModel} from './motorcycle-model';
 import {ackermannAngle} from '../shared/front-steering';
 import {Canvas,useFrame} from '@react-three/fiber';
 import {OrbitControls} from '@react-three/drei';
@@ -6,11 +7,11 @@ import React,{useMemo,useRef} from 'react';import * as THREE from 'three';import
 type Station=[number,number,number];
 function Pillar({from,to,color,ghost}:{from:[number,number,number];to:[number,number,number];color:string;ghost:boolean}){const a=new THREE.Vector3(...from),b=new THREE.Vector3(...to),direction=b.clone().sub(a);return <mesh position={a.add(b).multiplyScalar(.5)} quaternion={new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),direction.clone().normalize())}><boxGeometry args={[.042,direction.length(),.045]}/><meshStandardMaterial color={color} metalness={.4} roughness={.3} transparent={ghost} opacity={ghost?.26:1} depthWrite={!ghost}/></mesh>}
 function shell(stations:Station[],bottom:number){const vertices:number[]=[],indices:number[]=[];for(const [z,w,h] of stations)vertices.push(-w*.86,bottom,z,w*.86,bottom,z,w,h-.055,z,w*.82,h,z,-w*.82,h,z,-w,h-.055,z);for(let i=0;i<stations.length-1;i++)for(let j=0;j<6;j++){const a=i*6+j,b=i*6+(j+1)%6;indices.push(a,b,a+6,b,b+6,a+6)}indices.push(0,2,1,0,5,2,5,4,2,4,3,2);const n=(stations.length-1)*6;indices.push(n,n+1,n+2,n,n+2,n+5,n+5,n+2,n+4,n+4,n+2,n+3);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();return g;}
-export function RoadCarModel({car,color,ghost=false,steering,distance}:{car:string;color:string;ghost?:boolean;steering?:React.RefObject<number>;distance?:React.RefObject<number>}){
+function CarBody({car,color,ghost=false,steering,distance}:{car:string;color:string;ghost?:boolean;steering?:React.RefObject<number>;distance?:React.RefObject<number>}){
  const c=roadCar(car),a=CAR_APPEARANCE[car]??CAR_APPEARANCE.hatch,L=c.length*1.45,pickup=c.shape==='pickup',tall=pickup||c.shape==='suv',hatch=c.shape==='hatch'||c.shape==='suv',radius=a.wheel,axle=L*.32,base=.23,roof=a.roof;
  const wheels=useRef<THREE.Group[]>([]),spins=useRef<THREE.Group[]>([]);
- useFrame((_,dt)=>{wheels.current.forEach((wheel,i)=>{if(wheel)wheel.rotation.y=THREE.MathUtils.damp(wheel.rotation.y,i%2===1?ackermannAngle(steering?.current??0,axle*2,i<2?-1:1):0,12,dt)});spins.current.forEach(w=>{if(w)w.rotation.x=(distance?.current??0)/radius})});
- const body=useMemo(()=>shell([[-L*.5,.49,.17],[-L*.43,.58,.26],[-L*.28,.59,.28],[L*.22,.58,.27],[L*.42,.55,.21],[L*.5,.48,.13]],-.19),[L]);
+ useFrame((_,dt)=>{wheels.current.forEach((wheel,i)=>{if(wheel)wheel.rotation.y=THREE.MathUtils.damp(wheel.rotation.y,i%2===1?ackermannAngle(steering?.current??0,axle*2,i<2?-1:1):0,18,dt)});spins.current.forEach(w=>{if(w)w.rotation.x=(distance?.current??0)/radius})});
+ const body=useMemo(()=>shell([[-L*.5,.49,.17],[-L*.46,.54,.23],[-L*.38,.575,.27],[-L*.28,.59,.28],[L*.15,.585,.28],[L*.3,.57,.25],[L*.42,.53,.19],[L*.5,.48,.13]],-.19),[L]);
  const cabin=useMemo(()=>{const back=pickup?-L*.12:hatch?-L*.4:-L*.32,front=L*(pickup?.29:.27);const v=[-.51,base,back,.51,base,back,-.5,base,front,.5,base,front,-.43,roof,L*a.rearRoof,.43,roof,L*a.rearRoof,-.42,roof,L*a.frontRoof,.42,roof,L*a.frontRoof];const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setIndex([0,1,4,1,5,4,2,6,3,3,6,7,0,4,2,2,4,6,1,3,5,3,7,5,4,5,6,5,7,6]);g.computeVertexNormals();return g;},[L,a,base,roof,hatch,pickup]);
  React.useEffect(()=>()=>{body.dispose();cabin.dispose()},[body,cabin]);
  const material=(tint:string,metal=.25,rough=.32)=><meshStandardMaterial color={tint} metalness={metal} roughness={rough} transparent={ghost} opacity={ghost?.26:1} depthWrite={!ghost} side={THREE.DoubleSide}/>;
@@ -30,7 +31,7 @@ export function RoadCarModel({car,color,ghost=false,steering,distance}:{car:stri
    {!pickup&&box([side*.58,.09,-L*.25],[.018,.032,.12],a.trim)}
    {box([side*.58,base+.1,L*.2],[.13,.09,.17],color)}
    {box([side*.645,base+.1,L*.195],[.012,.065,.125],'#728d9c')}
-   {tall&&box([side*.58,-.15,0],[.12,.05,L*.57],'#343d43')}
+   {box([side*.585,.22,-L*.08],[.025,.035,.13],a.trim)}{!pickup&&box([side*.575,.21,-L*.29],[.025,.035,.12],a.trim)}{box([side*.585,.0,-L*.06],[.015,.012,L*.5],'#344049')}{tall&&box([side*.58,-.15,0],[.12,.05,L*.57],'#343d43')}
    <Pillar from={[side*.5,base,L*(pickup?.29:.27)]} to={[side*.42,roof,L*a.frontRoof]} color={color} ghost={ghost}/><Pillar from={[side*.51,base,L*(pickup?-.12:hatch?-.4:-.32)]} to={[side*.43,roof,L*a.rearRoof]} color={color} ghost={ghost}/>
    {/* Front lamps / running lights and red rear lamp signature. */}
    {box([side*.365,.14,front+.006],[.255,a.lamp,.045],'#e2ecf5',[0,-side*.16,0])}
@@ -62,3 +63,5 @@ export function RoadCarModel({car,color,ghost=false,steering,distance}:{car:stri
  </group>;
 }
 export function CarPreview({car,color}:{car:string;color:string}){return <div className="car-preview" aria-label={`โมเดลจำลอง ${roadCar(car).name}`}><Canvas frameloop="demand" dpr={[1,1.25]} camera={{position:[2.6,1.65,3.15],fov:40}}><hemisphereLight args={['#e6f1ff','#47503e',1.7]}/><directionalLight position={[3,5,2]} intensity={2.5}/><RoadCarModel car={car} color={color}/><OrbitControls enablePan={false} enableZoom={false} target={[0,.2,0]}/></Canvas><small>{roadCar(car).name} · ลากเพื่อหมุนดู</small></div>}
+
+export function RoadCarModel(props:Parameters<typeof CarBody>[0]){return roadCar(props.car).shape==='motorcycle'?<MotorcycleModel {...props}/>:<CarBody {...props}/>;}
