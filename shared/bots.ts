@@ -5,7 +5,7 @@ export type BotMemory=Record<string,{since:number;cooldown:number;target?:number
 export const BOT_DRIVING={easy:{reactionMs:500,cooldownMs:1800,lookAhead:65,prediction:1,margin:4,pace:.88},medium:{reactionMs:120,cooldownMs:850,lookAhead:85,prediction:1.6,margin:2.5,pace:1},hard:{reactionMs:0,cooldownMs:400,lookAhead:140,prediction:2.4,margin:1.5,pace:1}} as const;
 /** Continuous passing paths, evaluated against occupied bodies and relative closing speeds. */
 export function botCommands(players:Player[],track:Track,memory:BotMemory={},now=Date.now(),traffic:TrafficCar[]=[]):Record<string,Command>{
- const racing=players.filter(p=>p.status==='racing'&&!p.spectator&&!(p.recoveryMs??0));const commands:Record<string,Command>={};
+ traffic=traffic.filter(c=>c.fallMs===undefined);const racing=players.filter(p=>p.status==='racing'&&!p.spectator&&!(p.recoveryMs??0));const commands:Record<string,Command>={};
  for(const p of racing){if(!p.bot)continue;const style=BOT_DRIVING[p.botLevel??'medium'];const lateral=p.lateral??p.lane??1;let action=recommendAction(track,p).action;if((p.botLevel==='hard'||(!track.curves.some(c=>c.end>=p.position&&c.start<=p.position+100)))&&action==='hold')action='accelerate';const cap=speedCeiling(p,players)*style.pace;if(action==='accelerate'&&p.speed>=cap)action='hold';const state=memory[p.id]??(memory[p.id]={since:now,cooldown:0,target:lateral});const front=racing.filter(q=>q.id!==p.id&&!(q.slingshotMs??0)&&!(p.slingshotMs??0)&&Math.abs((q.lateral??q.lane??1)-lateral)<CONFIG.bodyCorridor&&q.position>p.position).sort((a,b)=>a.position-b.position)[0];
 
  const clear=(target:number,escape=false)=>{
