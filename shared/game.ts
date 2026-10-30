@@ -2,22 +2,22 @@ import {ROAD_CARS} from './cars';
 import {validateImportedRoad} from './real-track';
 import {generateTrack,validateRoad} from './track';
 const SPEED_BASIS_MS=3000;
-export const CONFIG = { length:7000, speedBasisMs:SPEED_BASIS_MS, tickMs:100, gameSpeed:1, laneChangeMs:1500, botThinkMs:700, initialSpeed:24, minCruiseKmh:20, maxSpeedKmh:120, maxSpeed:120*SPEED_BASIS_MS/3600, acceleration:10, braking:42, handling:6, brakeTapFraction:.05, brakeHoldDelayMs:100, gap:40, trafficGap:3.5, bodyCorridor:.68/1.5, respawnMs:1800, respawnLaunchFactor:1.8, respawnLaunchUntilKmh:60, sight:700, clearGap:45, clearBonus:6, passBonus:36, dangerousExcess:21, moderateExcess:15, minorSlowdown:9, majorSlowdown:15, cliffSlowdown:18 } as const;
+export const CONFIG = { length:7000, speedBasisMs:SPEED_BASIS_MS, tickMs:100, gameSpeed:1, laneChangeMs:1500, botThinkMs:700, initialSpeed:24, minCruiseKmh:20, maxSpeedKmh:120, maxSpeed:120*SPEED_BASIS_MS/3600, acceleration:25, braking:125, handling:6, brakeTapFraction:.05, brakeHoldDelayMs:100, gap:40, trafficGap:3.5, bodyCorridor:.68/1.5, respawnMs:1800, respawnLaunchFactor:1.8, respawnLaunchUntilKmh:60, sight:700, clearGap:45, clearBonus:6, passBonus:36, dangerousExcess:21, moderateExcess:15, minorSlowdown:9, majorSlowdown:15, cliffSlowdown:18 } as const;
 export type Action = 'brake'|'hold'|'accelerate';
 export const CAR_STATS:Record<string,{accel:number;brake:number;max:number;handling:number}>=ROAD_CARS;
 export type Command = { reverse?:boolean; steering?:number;power?:number;action:Action; overtake:boolean; riskConfirmed:boolean; lane?:0|1|2 };
 export type Curve = {start:number; end:number; safe:number; danger:'low'|'cliff'; dashed:boolean; kind?:'wide'|'tight'; long?:boolean;insideLane?:0|2};
-export type Player = {id:string; name:string; color:string; car:string; ready:boolean; connected:boolean; spectator:boolean; position:number; previous:number; speed:number; status:'racing'|'finished'|'dead'; finishTime?:number;finishAt?:number;lateralVelocity?:number;steeringInput?:number;headingError?:number;reversing?:boolean;frontWheelAngle?:number;brakeTapPending?:boolean;brakeHeld?:boolean;brakeHoldMs?:number;rearContactId?:string;impactHoldMs?:number;invulnerableMs?:number;recoveryMs?:number;chaseBonus?:number;draftBonus?:number;draftCarryMs?:number;respawnLaunch?:boolean;recoveryKind?:'post'|'runoff';recoverySide?:number;restartRequired?:boolean;grip?:number;groundSpeedKmh?:number;raceStats?:{passes:number;cleanCorners:number;mistakes:number;lostDistance:number;worstCorner?:number}; passed?:boolean; passFrontId?:string; lane?:0|1|2; previousLane?:0|1|2; lateral?:number; previousLateral?:number; riskCurve?:number; bot?:boolean;botLevel?:'easy'|'medium'|'hard'; lastEvent?:string};
-export type Track = {length?:number;pace?:number;mode?:'short'|'long'|'real1081'|'road10'|'road20'|'road30'|'roadFull';source?:'osm1081';name?:string;overtakeZones?:{start:number;end:number;kind:'approach'|'exit'}[];seed:number; curves:Curve[]; dashed:{start:number;end:number}[]; route?:[number,number,number][]};
+export type Player = {id:string; name:string; color:string; car:string; ready:boolean; connected:boolean; spectator:boolean; position:number; previous:number; speed:number; status:'racing'|'finished'|'dead'; finishTime?:number;finishAt?:number;lateralVelocity?:number;steeringInput?:number;headingError?:number;neutralMs?:number;trailMs?:number;cornerBoost?:number;wasInBend?:boolean;exitMs?:number;slingshotMs?:number;slingCooldownMs?:number;reversing?:boolean;frontWheelAngle?:number;brakeTapPending?:boolean;brakeHeld?:boolean;brakeHoldMs?:number;rearContactId?:string;impactHoldMs?:number;invulnerableMs?:number;recoveryMs?:number;chaseBonus?:number;draftBonus?:number;draftCarryMs?:number;respawnLaunch?:boolean;recoveryKind?:'post'|'runoff';recoverySide?:number;restartRequired?:boolean;grip?:number;groundSpeedKmh?:number;raceStats?:{passes:number;cleanCorners:number;mistakes:number;lostDistance:number;worstCorner?:number}; passed?:boolean; passFrontId?:string; lane?:0|1|2; previousLane?:0|1|2; lateral?:number; previousLateral?:number; riskCurve?:number; bot?:boolean;botLevel?:'easy'|'medium'|'hard'; lastEvent?:string};
+export type Track = {mapId?:string;startKm?:number;endKm?:number;length?:number;pace?:number;mode?:'short'|'long'|'real1081'|'road10'|'road20'|'road30'|'roadFull';source?:'osm1081';name?:string;overtakeZones?:{start:number;end:number;kind:'approach'|'exit'}[];seed:number; curves:Curve[]; dashed:{start:number;end:number}[]; route?:[number,number,number][]};
 export const DEFAULT_COMMAND:Command = {action:'hold',overtake:false,riskConfirmed:false,steering:0};
 export function makeTrack(seed:number,length:number=CONFIG.length):Track {return generateTrack(seed,length);}
-export function validateTrack(t:Track) {return t.curves.length>0&&t.curves.every((c,i)=>c.start>=0&&c.start<c.end&&c.end<=(t.length??CONFIG.length)&&c.safe>0&&(!i||t.curves[i-1].end<=c.start))&&t.dashed.every(d=>d.end-d.start>=20)&&t.dashed[0]?.start===0&&t.dashed.at(-1)?.end===(t.length??CONFIG.length)&&(!t.route||(t.source==='osm1081'?validateImportedRoad(t.route):validateRoad(t.route)));}
+export function validateTrack(t:Track) {return (t.curves.length>0||!!t.route)&&t.curves.every((c,i)=>c.start>=0&&c.start<c.end&&c.end<=(t.length??CONFIG.length)&&c.safe>0&&(!i||t.curves[i-1].end<=c.start))&&t.dashed.every(d=>d.end-d.start>=20)&&t.dashed[0]?.start===0&&t.dashed.at(-1)?.end===(t.length??CONFIG.length)&&(!t.route||(t.source==='osm1081'?validateImportedRoad(t.route):validateRoad(t.route)));}
 export function nextCurve(track:Track,pos:number) {return track.curves.find(c=>c.end>=pos);}
 export function speedFor(p:Player,c:Command){return Math.max(0,Math.min(CONFIG.maxSpeed,p.speed+(c.action==='accelerate'?CONFIG.acceleration:c.action==='brake'?-CONFIG.braking:0)));}
 export function cornerRules(curve:Curve,p:Player){
- if(curve.insideLane===undefined)return {safe:curve.safe+CONFIG.handling*(CAR_STATS[p.car]?.handling??1),distanceFactor:1,line:'ปกติ'};
+ if(curve.insideLane===undefined)return {safe:Math.max((curve.safe+CONFIG.handling)*(CAR_STATS[p.car]?.handling??1),(p.cornerBoost??0)*140/1.2),distanceFactor:1,line:'ปกติ'};
  const lane=p.lateral??p.lane??1,relative=curve.insideLane===0?lane-1:1-lane;
- return {safe:curve.safe+CONFIG.handling+relative*5,distanceFactor:1-relative*.055,line:relative<-.4?'ด้านใน':relative>.4?'ด้านนอก':'กลาง'};
+ return {safe:Math.max((curve.safe+CONFIG.handling+relative*5)*(CAR_STATS[p.car]?.handling??1),(p.cornerBoost??0)*140/1.2),distanceFactor:1-relative*.055,line:relative<-.4?'ด้านใน':relative>.4?'ด้านนอก':'กลาง'};
 }
 /** Conservative braking guide, accounting for 100 ms server steps and reaction time. */
 export function brakingGuide(track:Track,p:Player){
@@ -85,5 +85,6 @@ export function resolveRound(players:Player[],track:Track,commands:Record<string
  }
  return players.map(p=>updated.get(p.id)||p);
 }
+
 
 

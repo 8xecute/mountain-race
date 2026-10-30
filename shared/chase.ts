@@ -1,15 +1,5 @@
 import {CONFIG,type Player,type Track} from './game';
-export const CHASE={perRank:.20,max:.80,fadeStart:40,fullGap:100,draftMin:10,draftMax:40,draftAccel:.15,carryMs:2000,transitionMs:2000} as const;
-export function chaseAssist(p:Player,players:Player[],track:Track,dt:number,accelerating:boolean){
- const ordered=players.filter(q=>!q.spectator&&(q.status==='racing'||q.status==='finished')).sort((a,b)=>b.position-a.position||a.id.localeCompare(b.id));
- const rank=ordered.findIndex(q=>q.id===p.id),front=ordered.slice(0,Math.max(0,rank)).reverse().find(q=>q.position>p.position),gap=front?front.position-p.position:0;
- const bend=track.curves.some(c=>p.position<=c.end&&p.position+Math.max(20,p.speed*dt/CONFIG.speedBasisMs)>=c.start);
- const valid=accelerating&&!bend&&!(p.recoveryMs??0)&&p.status==='racing';
- const target=valid&&front?Math.min(CHASE.max,Math.max(0,rank)*CHASE.perRank)*Math.max(0,Math.min(1,(gap-CHASE.fadeStart)/(CHASE.fullGap-CHASE.fadeStart))):0;
- const old=p.chaseBonus??0,step=CHASE.max*dt/CHASE.transitionMs;
- const chase=valid&&gap>CHASE.fadeStart?old+Math.max(-step,Math.min(step,target-old)):0;
- const drafting=valid&&!!front&&gap>=CHASE.draftMin&&gap<=CHASE.draftMax&&Math.abs((front.lateral??front.lane??1)-(p.lateral??p.lane??1))<.4;
- const carry=drafting?CHASE.carryMs:Math.max(0,(p.draftCarryMs??0)-dt);
- const draft=valid&&!chase?(drafting?CHASE.draftAccel:CHASE.draftAccel*carry/CHASE.carryMs):0;
- return {chaseBonus:chase,draftBonus:draft,draftCarryMs:valid?carry:0};
-}
+export const CHASE={perRank:.20,max:.80,fadeStart:15,fullGap:100,draftMin:3.5,draftMax:15,draftAccel:.40,carryMs:3000,transitionMs:2000,decayPerSecond:.18} as const;
+export function chaseAssist(p:Player,players:Player[],track:Track,dt:number,accelerating:boolean){const ordered=players.filter(q=>!q.spectator&&(q.status==='racing'||q.status==='finished')).sort((a,b)=>b.position-a.position||a.id.localeCompare(b.id));const rank=ordered.findIndex(q=>q.id===p.id),front=ordered.slice(0,Math.max(0,rank)).reverse().find(q=>q.position>p.position),gap=front?front.position-p.position:0;const bend=track.curves.some(c=>p.position<=c.end&&p.position+Math.max(20,p.speed*dt/CONFIG.speedBasisMs)>=c.start);const valid=!(p.recoveryMs??0)&&p.status==='racing';const strength=front?Math.min(1,Math.max(0,rank)/Math.max(1,ordered.length-1)):0;const target=valid&&accelerating&&front&&!bend?Math.min(CHASE.max,rank*CHASE.perRank)*Math.max(0,Math.min(1,(gap-15)/85)):0;const old=p.chaseBonus??0,chase=valid?old+Math.max(-CHASE.decayPerSecond*dt/1000,Math.min(CHASE.max*dt/CHASE.transitionMs,target-old)):0;const drafting=valid&&accelerating&&!!front&&gap>=3.5&&gap<15&&Math.abs((front.lateral??front.lane??1)-(p.lateral??p.lane??1))<.4;const cooldown=Math.max(0,(p.slingCooldownMs??0)-dt),trigger=drafting&&cooldown===0;const slingshotMs=trigger?3000:Math.max(0,(p.slingshotMs??0)-dt);const exitMs=!bend&&p.wasInBend&&(p.cornerBoost??0)>0?2000:Math.max(0,(p.exitMs??0)-dt);return {chaseBonus:chase,draftBonus:accelerating&&slingshotMs>0?.4:0,draftCarryMs:slingshotMs,slingshotMs,slingCooldownMs:trigger?8000:cooldown,cornerBoost:valid?(bend?strength:Math.max(0,(p.cornerBoost??0)-.18*dt/1000)):0,wasInBend:bend,exitMs};}
+
+

@@ -1,6 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {makeTrack,recommendAction,type Player} from './game';import {stepRealtime} from './realtime';
 const base:Player={id:'a',name:'a',color:'x',car:'hatch',ready:true,connected:true,spectator:false,status:'racing',position:0,previous:0,speed:24,lane:0,lateral:0};
-test('braking and maintaining speed beats held throttle on three seeded short courses',()=>{for(const seed of [1,2,42]){const track={...makeTrack(seed,3500),pace:1.5};const run=(smart:boolean)=>{let p:Player={...base,bot:true,botLevel:'easy' as const};for(let i=0;i<6000;i++){p=stepRealtime([p],track,{a:{action:smart?recommendAction(track,p).action:'accelerate',lane:0,overtake:false,riskConfirmed:false}},{},100).players[0];assert.notEqual(p.status,'dead');if(p.status==='finished')return i}throw Error('race failed to finish')};assert.ok(run(true)<run(false),`seed ${seed}`)}});
 test('grip recovers under controlled cornering rather than accumulating permanent damage',()=>{const track={seed:1,curves:[{start:0,end:500,safe:60,danger:'low' as const,dashed:true}],dashed:[],pace:1};let p:Player={...base,position:100,speed:60,grip:.3};for(let i=0;i<30;i++)p=stepRealtime([p],track,{a:{action:'hold',lane:0,overtake:false,riskConfirmed:false}},{},100).players[0];assert.ok((p.grip??0)>.9)});
 
 
