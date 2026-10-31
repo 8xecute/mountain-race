@@ -1,10 +1,11 @@
 import {roadCar} from './cars';
 const clamp=(v:number,a:number,b:number)=>Math.max(a,Math.min(b,v));
-export const STEERING={maxAngle:.55,lateralAcceleration:10,responseMs:180,counterResponseMs:90,deadZone:.025,substepMs:20} as const;
+export const STEERING={maxAngle:.70,lateralAcceleration:10,responseMs:180,counterResponseMs:90,deadZone:.025,substepMs:20} as const;
 /** Front-wheel bicycle model. Integrate wheel response so 100/200 ms server steps agree. */
 export function frontSteering(car:string,input:number,previous:number,speedKmh:number,distance:number,dtMs:number,gripAssist=1){
  const wheelbase=roadCar(car).length*1.45*.64,v=Math.max(0,speedKmh)/3.6;
- const limit=Math.min(STEERING.maxAngle,Math.atan(STEERING.lateralAcceleration*roadCar(car).handling*gripAssist*wheelbase/(v*v+10)));
+ const lowSpeedBoost=1+.3*clamp(1-speedKmh/80,0,1);
+ const limit=Math.min(STEERING.maxAngle,Math.atan(STEERING.lateralAcceleration*lowSpeedBoost*roadCar(car).handling*gripAssist*wheelbase/(v*v+10)));
  const axis=Math.abs(input)<=STEERING.deadZone?0:Math.sign(input)*(Math.abs(clamp(input,-1,1))-STEERING.deadZone)/(1-STEERING.deadZone);
  const target=-Math.sign(axis)*Math.abs(axis)**1.2*limit;
  let angle=clamp(previous,-limit,limit),turn=0,slip=0;
